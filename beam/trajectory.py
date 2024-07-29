@@ -10,8 +10,10 @@ import math
 import numpy as np
 import matplotlib.pyplot as plt 
 
-from ..geom.geom import (vNorm, get_coord_indexes, vec3D, rotation_mx_by_angles)
+from hibpy.beam.slits import SlitPolygon
+from hibpy.phys.constants import SI_1keV
 from ..phys.runge_kutta_ex import runge_kutta4
+from ..geom.geom import (vNorm, get_coord_indexes, vec3D, rotation_mx_by_angles)
 
 try:
     from joblib import delayed
@@ -101,6 +103,33 @@ class Trajectory():
     def initial_data(self):
         return self.q, self.m, self.Ebeam, self.rrvv[0]
     
+    @property
+    def slit_bins(self):
+        """
+        Sort full trajectory fan to slit bins.
+        
+        Parameters
+        ----------
+        traj_list : list[Trajectory]
+            List of Trajectory class objects; full fan of one trajectory.
+
+        Returns
+        -------
+        slit_bins : dict {int : list[Trajectory, ...]}
+            Dictionary: keys - slit numbers : int; values - fans to slits : list[Trajectory, ...].
+
+        """
+        traj_list = self.partial_dense_fan
+        if len(traj_list) > 0:
+            slit_bins = {}
+            tr_to_slits = [tr for tr in traj_list if isinstance(tr.obstacle, SlitPolygon)]
+            for tr in tr_to_slits:
+                if tr.obstacle.number in slit_bins.keys():
+                    slit_bins[tr.obstacle.number].append(tr)
+                else:
+                    slit_bins[tr.obstacle.number] = [tr]
+            return slit_bins
+    
     def print_log(self, s):
         self.log.append(s)
         print(s)
@@ -180,7 +209,11 @@ class Trajectory():
             self.secondary.translate(vec)
         for i in range(self.rrvv.shape[0]):
             self.rrvv[i, :3] += vec
-
+            
+    def __repr__(self):
+        Ebeam = f"Ebeam:{round(self.Ebeam/SI_1keV, 1)}, "
+        U = ", ".join([f"{key}:{round(self.U[key], 2)}" for key in self.U.keys()])
+        return Ebeam + U
 #%% 
 def run_with_return(tr, *args):
     tr.run(*args)
