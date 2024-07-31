@@ -4,15 +4,6 @@ Created on Tue Jul 16 15:07:18 2024
 
 @author: Krokhalev, Ammosov
 """
-#%%
-import sys
-workplace = 'civs'
-prefix = {'civs': r'C:\Projects\Ammosov\T-15MD\py',
-          '261' : r'C:\Users\Ammosov_YaM\YandexDisk-conductor77747\NRCKI\Students\Ammosov\Projects\T-15MD\py',
-          'home': r'C:\YandexDisk\NRCKI\Students\Ammosov\Projects\T-15MD\py',
-          'laptop': r'D:\Ammosov\Projects\py'}[workplace]
-hibpy_path = prefix + r'\hibp-packages'
-if hibpy_path not in sys.path: sys.path.append(hibpy_path)
 
 #%%
 import math
@@ -22,6 +13,7 @@ from abc import ABC, abstractmethod
 from ..geom.geom import rotateMx
 from ..phys.constants import deg
 from ..misc.interp import FastGridInterpolator
+from ..misc.tokameq import TokameqFile
 
 #%%
 class AbstractCoordConverter(ABC):
@@ -107,12 +99,12 @@ class CoordConverterDShapeSimple(AbstractCoordConverter):
             return 0., 0.
         return rho, theta
     
-class FluxCoordConverter(CoordConverterDShapeSimple):
+class FluxCoordConverter(CoordConverterDShapeSimple): #!!! needs to be tested before use
     '''
     rho is calculated as square root of magnetic flux
     '''
     def __init__(self, points, flux_data_2D):
-        self.flux = FastGridInterpolator(points, flux_data_2D, fill_value=None) # what fill value needed?
+        self.flux = FastGridInterpolator(points, flux_data_2D, fill_value=None, method='linear') # what fill value needed?
         
         min_flux_index = np.argmin(self.flux.values)
         self.R = self.flux.xx[min_flux_index[0]]
@@ -131,16 +123,25 @@ class FluxCoordConverter(CoordConverterDShapeSimple):
         
         return rho, theta
     
-    def from_toqamek_file(self, filename):
-        pass
+    @classmethod
+    def from_toqamek_file(cls, filename):
+        file = TokameqFile(filename)
+        points = [file.F.rr, file.F.zz[::-1]]
+        data = file.F.values[::-1, :].T
+        return cls(points, data)
     
-    def from_dina_file(self, filename):
-        pass
+    @classmethod
+    def from_dina_file(cls, filename):
+        with open(filename, 'rb'):
+            points = []
+            data = []
+        
+        return cls(points, data)
 
 #%%
 if __name__ == "__main__":
     
-    separatrix = np.loadtxt(prefix + "\programs\SynHIBP\devices\T-15MD\geometry\T15_sep.txt") / 1000
+    separatrix = np.loadtxt("D:\py\programs\SynHIBP\devices\T-15MD\geometry\T15_sep.txt") / 1000
     T15_R = 1.5 # [m]
     T15_separatrix = []
     for sep in separatrix:
