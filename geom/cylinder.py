@@ -98,7 +98,12 @@ class CylindricShell(AbstractCollider3D):
             return None
         
         dr = r1_loc - r0_loc
-        t1, t2 = self._complex_intersect_with_line(r0_loc, dr)
+        
+        t = self._complex_intersect_with_line(r0_loc, dr)
+        
+        if len(t) == 0:
+            return None
+        t1, t2 = t
         
         # choosing 1 solution, which is real and lies in [0, 1]
         type_t1 = isinstance(t1, float)
