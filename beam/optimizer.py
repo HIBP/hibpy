@@ -6,20 +6,18 @@ Created on Wed Jan 31 13:59:48 2024
 """
 
 #%%
-from abc import ABC, abstractmethod
-from copy import deepcopy
 import numpy as np
-
-
+from copy import deepcopy
 import matplotlib.pyplot as plt
+from abc import ABC, abstractmethod
 
-from .trajectory import pass_fan, Trajectory
-from .stopper import CollisionStopper, CountStopper
-from .aim import AbstractAim, calc_angles
-from ..geom.geom import intersect_line_segment_2D, plot_point
+# from ..beam.aim import DotAim
 from ..geom.group import Group3D
 from ..phys.constants import SI_1keV
-
+from .aim import AbstractAim, calc_angles
+from .trajectory import pass_fan, Trajectory
+from .stopper import CollisionStopper, CountStopper
+from ..geom.geom import intersect_line_segment_2D, plot_point
 try:
     import multiprocessing as mp
     from joblib import Parallel, delayed
@@ -332,7 +330,32 @@ def set_U_and_run(traj, plates, *args, plot=False):
         # plt.pause(0.01)
         trajes_log.append(traj)
     return traj
+
+class MiniOptimizer(AbstractOptimizer):
+    def __init__(self, plates, aim, beamline, dt, B, stopper, U_limits, U_step, silent=True):
+        self.plates = plates
+        self.aim = aim
+        self.beamline = beamline
+        self.dt = dt
+        self.B = B
+        self.stopper = stopper
+        self.U_step = U_step
+        self.U_limits = U_limits
+        self.U_range = np.arange(U_limits[0], U_limits[1], self.U_step)
+        self.silent = silent
     
+    def __call__(self, trajectory):
+        for U in self.U_range:
+            tr_tmp = deepcopy(trajectory)
+            self.plates.U = U
+            tr_tmp.U[self.plates.name] = U
+            tr_tmp.run(self.beamline.E, self.B, self.stopper, self.dt)
+            if isinstance(tr_tmp.obstacle, type(self.aim)) and self.aim.hit(tr_tmp.rrvv[-1, :3], tr_tmp.rrvv[-2, :3]):
+                if not self.silent:
+                    print(f'optimization successful U = {U} kV')
+                return True, tr_tmp
+        return False, tr_tmp
+
 class SecondaryBeamlineOnePlatesOptimizer(AbstractOptimizer):
     def __init__(self, A3_plates, U_limits, aim, secondary_beamline, sec_dt, B, 
                  max_steps=10, max_gradent_steps=50, U_steps=10, main_aim_axis=0, 
