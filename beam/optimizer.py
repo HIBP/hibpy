@@ -8,16 +8,14 @@ Created on Wed Jan 31 13:59:48 2024
 #%%
 import numpy as np
 from copy import deepcopy
-import matplotlib.pyplot as plt
 from abc import ABC, abstractmethod
 
-# from ..beam.aim import DotAim
 from ..geom.group import Group3D
 from ..phys.constants import SI_1keV
 from .aim import AbstractAim, calc_angles
 from .trajectory import pass_fan, Trajectory
 from .stopper import CollisionStopper, CountStopper
-from ..geom.geom import intersect_line_segment_2D, plot_point
+from ..geom.geom import intersect_line_segment_2D
 try:
     import multiprocessing as mp
     from joblib import Parallel, delayed
