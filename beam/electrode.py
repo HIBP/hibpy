@@ -121,7 +121,8 @@ class AbstractElectrode(AbstractCollider3D, AbstractCarcass3D):
     def make_hole(self, hole):
         self._carcass = CarcassWithHole(deepcopy(self._carcass), deepcopy(hole))
         self._collider = ColliderCutWithCarcass(deepcopy(self._collider), deepcopy(hole))
-        del(self._transformable)
+        if hasattr(self, '_transformable'):
+            del(self._transformable)
         
 #%%
 class CylindricElectrode(AbstractElectrode):
