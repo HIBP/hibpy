@@ -86,3 +86,6 @@ class PolygonalPrism3D(AbstractCarcass3D):
         for poly in self.polygons:
             poly.translate(vec)
         self.recalc_gabarits()
+            
+            
+# TODO Add intersect_with_segment

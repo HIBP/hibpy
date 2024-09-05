@@ -277,7 +277,8 @@ def ray_rho(tok, angle, surf_rho):
 
 if __name__ == '__main__': 
     #tok = TokameqFile(r'D:\radrefs\HIBP-T15MD-master\1MA_sn.txt')
-    tok = TokameqFile(r'D:\radrefs\HIBP-T15MD-master\2MA.txt')
+    #tok = TokameqFile(r'D:\radrefs\HIBP-T15MD-master\2MA.txt')
+    tok = TokameqFile(r'C:\Users\Student\YandexDisk\NRCKI\Students\Ammosov\Projects\T-15MD\py\programs\SynHIBP\devices\T-15MD\magnetic_field\tokameq_files\1.0MA_sn.txt') 
     
     plt.figure()
     tok.Jpl.plot()
