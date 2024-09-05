@@ -356,7 +356,7 @@ class MiniOptimizer(AbstractOptimizer):
 
 class SecondaryBeamlineOnePlatesOptimizer(AbstractOptimizer):
     def __init__(self, A3_plates, U_limits, aim, secondary_beamline, sec_dt, B, 
-                 max_steps=10, max_gradent_steps=50, U_steps=10, main_aim_axis=0, 
+                 max_steps=10, max_gradient_steps=50, U_steps=10, main_aim_axis=0, 
                  parallel=True, silent=True, collider=None):
         self.main_aim_axis = main_aim_axis
         self.intersect_line = [intersect_vertical_line, intersect_horizontal_line][main_aim_axis]
@@ -368,7 +368,7 @@ class SecondaryBeamlineOnePlatesOptimizer(AbstractOptimizer):
         self.U_limits = U_limits
         self.U_steps = U_steps
         self.max_steps = max_steps
-        self.max_gradent_steps = max_gradent_steps
+        self.max_gradient_steps = max_gradient_steps
         self.beamline_collider = Group3D([plates.collider for plates in self.beamline])
         if collider is not None:
             self.beamline_collider.append(collider)
@@ -456,7 +456,7 @@ class SecondaryBeamlineOnePlatesOptimizer(AbstractOptimizer):
                 return success, traj, U
             
             step_count += 1
-            if step_count > self.max_gradent_steps:
+            if step_count > self.max_gradient_steps:
                 self.exception = 'too many steps in dumb down'
                 return False, traj, U
             

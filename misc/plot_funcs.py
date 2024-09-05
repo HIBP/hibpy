@@ -192,3 +192,8 @@ def plot_slits_text_map(traj_list, axes_code=None, **kwargs):
     plt.xlabel('X, m')
     plt.ylabel('Y, m')
     plt.show()
+    
+#%% Plot 3D geometry
+
+# def plot3Dgeometry(group):
+    
