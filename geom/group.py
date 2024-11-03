@@ -73,6 +73,9 @@ class Group3D:
     
     def elements(self): 
         return self._list 
+    
+    def __len__(self):
+        return len(self._list)
 
     def translate(self, vec): 
         for elem in self._list: 
