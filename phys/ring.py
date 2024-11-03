@@ -252,7 +252,7 @@ class Ring:
         pts = _regularPolygon3D(npoints, self.center, self.radius, -self.normal)
         if closed: 
             pts.append(pts[0])
-        return pts    
+        return pts
         
     def plot(self, *args, **kwargs): 
         pgn = self.polygon(100, True)

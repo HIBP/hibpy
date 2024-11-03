@@ -362,6 +362,10 @@ class EmptyCrate():
     
     def gabarits(self):
         return np.array([self._vec, self._vec])
+    
+    @property
+    def carcass(self):
+        return None
         
 #%%
 class ComplexCrate(AbstractElectrode):
