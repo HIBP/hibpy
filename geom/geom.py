@@ -410,5 +410,3 @@ def direct_transform(obj, history):
 def inverse_transform(obj, history): 
     obj.translate(-history._vec)
     obj.transform(history._imx)
-    
-
