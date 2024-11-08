@@ -451,3 +451,4 @@ class BellevilleWasher2D(AbstractElectrode2D):
 Group3D.call_strategies['restore_3D'] = ListStrategy()
 Group3D.call_strategies['set_U']      = JustCallStrategy()
 Group3D.call_strategies['set_color']  = JustCallStrategy()
+Group3D.call_strategies['make_hole']  = JustCallStrategy()
