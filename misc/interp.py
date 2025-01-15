@@ -6,9 +6,10 @@ Created on Thu Nov 30 16:47:47 2023
 """
 #%%
 import numpy as np
-from scipy.interpolate import RegularGridInterpolator
 import matplotlib.pyplot as plt
+from scipy.interpolate import RegularGridInterpolator
 
+# from ..geom.box import gabaritbox3D
 #%%
 def array_to_value(array):
     result = array[0]
@@ -380,6 +381,7 @@ class RegularGridVectorInterpolator3D:
     
         self.lower_corner =  np.array([ self.xx[ 0], self.yy[ 0], self.zz[ 0] ])
         self.upper_corner  = np.array([ self.xx[-1], self.yy[-1], self.zz[-1] ])
+        # self._domain_box = gabaritbox3D([self.lower_corner, self.upper_corner])
 
     def __call__(self,  point): 
         
