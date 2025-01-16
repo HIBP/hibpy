@@ -23,7 +23,6 @@ import numpy as np
 #import matplotlib.pyplot as plt
 
 try:
-    # import multiprocessing as mp
     from joblib import Parallel, delayed
     JOBLIB_AVAILABLE = True
 except:
@@ -95,9 +94,7 @@ def scalar_field_on_grid(grid, func):
     return _ss.reshape(grid.shape[1:])
 
 def func_on_points(points, func, parallel=True):
-    # multiprocessing
     if parallel and JOBLIB_AVAILABLE:
-        # n_workers = mp.cpu_count() - 1
         vv = Parallel (n_jobs=-2) (delayed(func)(r) for r in points)
     else:
         vv = [func(r) for r in points]
@@ -231,13 +228,10 @@ class Grid:
 
     def calc_raw_field(self, func, parallel=False):
         points = self.as_raw_points()
-
         if parallel and JOBLIB_AVAILABLE:
-            #n_workers = mp.cpu_count() - 1
             raw_field = Parallel (n_jobs=-2) (delayed(func)(r) for r in points)
         else:
             raw_field = [func(r) for r in points]
-
         return np.array(raw_field)
 
     def calc_vector_field(self, func, parallel=False):
