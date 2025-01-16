@@ -12,7 +12,7 @@ from .prim import AbstractCarcass3D, as_polygon3D, Polygon3D
 from .geom import main_basis, join_gabarits, _ptInPolygon3D_, outside_gabarits, normalizedVector
 
 #%%
-class PolygonalPrism3D(AbstractCarcass3D):
+class Prism3D(AbstractCarcass3D):
     def __init__(self, polygon, height, basis=main_basis, main_axis=main_basis[-1]):
         '''
         Parameters

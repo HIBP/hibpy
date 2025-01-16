@@ -28,7 +28,7 @@ from .geom import (_intersect_plane_segm_, _regularPolygon3D, plot_point,
                    invMx, ptInPolygon2D, calc_gabarits_2D, identMx2D,
                    main_basis, transformMx, zwardRotateMx, transformPts)
 
-from .geom_ex import plot_polygon_ex
+from .plot_ex import plot_polygon_ex
 from ..misc.grid import func_on_points
 from ..geom.group import Group3D
 from ..geom.groupstrat import PlusStrategy
@@ -402,7 +402,8 @@ class PolygonWithHole3D(Polygon3D):
             return None
         elif _ptInPolygon3D_(self._points, intersect_pt):
             #if _ptInPolygon3D_(self._hole, intersect_pt):
-            if self._hole.intersect_with_segment(pt0, pt1):
+            intersect_hole = self._hole.intersect_with_segment(pt0, pt1)
+            if intersect_hole is not None:
                 return None
             return intersect_pt
         else:

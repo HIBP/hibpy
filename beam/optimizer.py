@@ -6,16 +6,20 @@ Created on Wed Jan 31 13:59:48 2024
 """
 
 #%%
-import numpy as np
-from copy import deepcopy
 from abc import ABC, abstractmethod
+from copy import deepcopy
+import numpy as np
 
-from ..geom.group import Group3D
-from ..phys.constants import SI_1keV
-from .aim import AbstractAim, calc_angles
+
+import matplotlib.pyplot as plt
+
 from .trajectory import pass_fan, Trajectory
 from .stopper import CollisionStopper, CountStopper
-from ..geom.geom import intersect_line_segment_2D
+from .aim import AbstractAim, calc_angles
+from ..geom.geom import intersect_line_segment_2D, plot_point
+from ..geom.group import Group3D
+from ..phys.constants import SI_1keV
+
 try:
     import multiprocessing as mp
     from joblib import Parallel, delayed
@@ -316,17 +320,12 @@ class TestB2ZoneCOptimizer(B2ZoneCOptimizer):
         return trajectory_0, dev_0
     
 #%% sec bl optimizers
-global trajes_log #!!!
-trajes_log = []
-
 def set_U_and_run(traj, plates, *args, plot=False):
     plates.set_U(traj.U[plates.name])
-    # print(plates.name, traj.U[plates.name]) #!!!
     traj.run(*args)
     if plot:
-        # traj.plot(axes_code='XZ') #!!!
-        # plt.pause(0.01)
-        trajes_log.append(traj)
+        traj.plot(axes_code='XZ')
+        plt.pause(0.01)
     return traj
 
 class MiniOptimizer(AbstractOptimizer):
@@ -353,11 +352,11 @@ class MiniOptimizer(AbstractOptimizer):
                     print(f'optimization successful U = {U} kV')
                 return True, tr_tmp
         return False, tr_tmp
-
+    
 class SecondaryBeamlineOnePlatesOptimizer(AbstractOptimizer):
     def __init__(self, A3_plates, U_limits, aim, secondary_beamline, sec_dt, B, 
                  max_steps=10, max_gradient_steps=50, U_steps=10, main_aim_axis=0, 
-                 parallel=True, silent=True, collider=None):
+                 parallel=True, silent=True):
         self.main_aim_axis = main_aim_axis
         self.intersect_line = [intersect_vertical_line, intersect_horizontal_line][main_aim_axis]
         self.plates = A3_plates
@@ -370,8 +369,6 @@ class SecondaryBeamlineOnePlatesOptimizer(AbstractOptimizer):
         self.max_steps = max_steps
         self.max_gradient_steps = max_gradient_steps
         self.beamline_collider = Group3D([plates.collider for plates in self.beamline])
-        if collider is not None:
-            self.beamline_collider.append(collider)
         self.stopper = CollisionStopper(Group3D([self.aim, self.beamline_collider]))
         self.parallel = parallel
         self.silent = silent
@@ -415,15 +412,11 @@ class SecondaryBeamlineOnePlatesOptimizer(AbstractOptimizer):
             i, intersect_pt = self.intersect_line(trace)
             
             if (i is None) or (intersect_pt is None):
-                i, intersect_pt = self.intersect_line(trace, line_lvl=self.aim.eps[self.main_aim_axis]*0.999)
-                if (i is None) or (intersect_pt is None):
-                    i, intersect_pt = self.intersect_line(trace, line_lvl=-self.aim.eps[self.main_aim_axis]*0.999)
-                    if (i is None) or (intersect_pt is None):
-                        self.exception = 'U out of limits'
-                        print(f'\r{self.plates.name} optimization failed: ', self.exception)
-                        trajectory.U[self.plates.name] = self.plates.U
-                        return False, trajectory
-                    
+                self.exception = 'U out of limits'
+                print(f'\r{self.plates.name} optimization failed: ', self.exception)
+                trajectory.U[self.plates.name] = self.plates.U
+                return False, trajectory
+            
             U = self.find_U(trace, U_array, i, intersect_pt)
             success, traj = self.try_sec(trajectory, U)
             if success:
