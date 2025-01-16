@@ -342,6 +342,51 @@ class DecoyFlaredPlates(FlaredPlates):
         self.name = name
 
 #%%
+
+class AnalyzerPlates(FlatPlates):
+
+    def __init__(self, width, length, gap, thick, name=None):
+        self.width  = width
+        self.length = length
+        self.gap    = gap
+        self.thick  = thick
+        self.name = name
+        self._main_box = Box3D(2*self.length, 2*self.gap, 2*self.width)
+        self._gabarit_box = deepcopy(self._main_box)
+        self._crate = None
+        self._carcass  = self.carcass
+        self._collider = self.collider
+        self.crate = EmptyCrate()
+        self._U = 0.
+        self._base_U = 0.
+        self._interp = None
+        self._base_interp = EmptyVectorInterpolator3D()
+        self._domain_box = None
+        self._transformable = Group3D([self._main_box, self._gabarit_box, self._collider,
+                                       self._carcass])
+
+    @property
+    def collider(self):
+        if hasattr(self, "_collider"):
+            return self._collider
+        points = [pt3D(-self.length/2, 0, -self.width/2),
+                  pt3D(-self.length/2, 0,  self.width/2),
+                  pt3D( self.length/2, 0,  self.width/2),
+                  pt3D( self.length/2, 0, -self.width/2)]
+
+        vec = vec3D(0, self.gap/2, 0)
+        upper = Polygon3D(points + vec)
+        lower = Polygon3D(points - vec)
+        self._collider = Group3D([lower, upper, self.crate])
+        return self._collider
+
+    def _decoy(self):
+        return DecoyFlatPlates(self.name)
+
+class DecoyAnalyzerPlates(AnalyzerPlates):
+    def __init__(self, name):
+        self.name = name
+#%%
 class EmptyCrate():
     def __init__(self):
         self._vec = vec3D(0, 0, 0)

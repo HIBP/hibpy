@@ -1,99 +1,103 @@
 # -*- coding: utf-8 -*-
 """
-Created on Wed Nov 15 16:38:37 2023
+Created on Wed Feb 28 17:41:33 2024
 
-@author: Krohalev_OD
+@author: reonid
 """
-#%%
-import numba
+
 import numpy as np
+import numba
 
 #%%
-def trivial_decorator(): 
-    def decorator(func): 
+def trivial_decorator():
+    def decorator(func):
         return func
     return decorator
-    
 
-_numba_njit = numba.njit
-# _numba_njit = trivial_decorator
+# _numba_njit = numba.njit
+_numba_njit = trivial_decorator
 
 #%%
-@_numba_njit()
-def f(k, E, V, B):
-    return k*(E + np.cross(V, B))
+
+# dr/dt = v
+# dv/dt =  q/m*(  E(r) + [v x B(r)]  )  # q_m = q/m
+
+def f(rv, q_m, E, B):
+    v = rv[3:]
+    r = rv[:3]
+    dv = q_m*(E(r) + np.cross(v, B(r)))
+    dr = v
+    return np.hstack((dr, dv))
+
 
 @_numba_njit()
-def runge_kutta(k, RV, dt, E, B):
-    '''
-    Calculate one step using Runge-Kutta algorithm
+def runge_kutta4(rv, q_m, dt, E, B):
+    dt2 = dt*0.5
 
-    V' = k(E + [VxB]) == K(E + np.cross(V,B)) == f
-    r' = V == g
+    k1 = f(rv,          q_m, E, B)
+    k2 = f(rv + dt2*k1, q_m, E, B)
+    k3 = f(rv + dt2*k2, q_m, E, B)
+    k4 = f(rv +  dt*k3, q_m, E, B)
 
-    V[n+1] = V[n] + (h/6)(m1 + 2m2 + 2m3 + m4)
-    r[n+1] = r[n] + (h/6)(k1 + 2k2 + 2k3 + k4)
-    m[1] = f(t[n], V[n], r[n])
-    k[1] = g(t[n], V[n], r[n])
-    m[2] = f(t[n] + (h/2), V[n] + (h/2)m[1], r[n] + (h/2)k[1])
-    k[2] = g(t[n] + (h/2), V[n] + (h/2)m[1], r[n] + (h/2)k[1])
-    m[3] = f(t[n] + (h/2), V[n] + (h/2)m[2], r[n] + (h/2)k[2])
-    k[3] = g(t[n] + (h/2), V[n] + (h/2)m[2], r[n] + (h/2)k[2])
-    m[4] = f(t[n] + h, V[n] + h*m[3], r[n] + h*k[3])
-    k[4] = g(t[n] + h, V[n] + h*m[3], r[n] + h*k[3])
+    return rv + dt/6.0 * (k1 + 2.0 * (k2 + k3) + k4)
 
-    Parameters
-    ----------
-    k : float
-        particle charge [Co] / particle mass [kg]
-    RV : np.array([[x, y, z, Vx, Vy, Vz]])
-        coordinates and velocities array [m], [m/s]
-    dt : float
-        timestep [s]
-    E : np.array([Ex, Ey, Ez])
-        values of electric field at current point [V/m]
-    B : np.array([Bx, By, Bz])
-        values of magnetic field at current point [T]
 
-    Returns
-    -------
-    RV : np.array([[x, y, z, Vx, Vy, Vz]])
-        new coordinates and velocities
+@_numba_njit()
+def runge_kutta5(rv, q_m, dt, E, B):
 
-    '''
-    if np.any(np.isnan(B)): 
-        print('NaN!!  B = ', B)
-        print('   RV = ', RV)
-    
-    if np.any(np.isnan(E)): 
-        print('NaN!!  E = ', E)
-        print('   RV = ', RV)
-    
-    r = RV[:3]
-    V = RV[3:]
+    _1_2  = dt*0.5
+    _1_4  = dt*0.25
+    _1_8  = dt*0.125
+    _1_16 = dt*0.0625
+    _1_7 =  dt/7.0
+    _3_16 = 3.0*_1_16
+    _9_16 = 9.0*_1_16
+    _2_7  = 2.0 *_1_7
+    _3_7  = 3.0 *_1_7
+    _8_7  = 8.0 *_1_7
+    _12_7 = 12.0*_1_7
 
-    m1 = f(k, E, V, B)
-    k1 = V #g(V)
+    k1 = f(rv,          q_m, E, B)              # t
+    k2 = f(rv + _1_4*k1, q_m, E, B)             # t + 0.25*dt
+    k3 = f(rv + _1_8*(k1 + k2), q_m, E, B)      # t + 0.25*dt
+    k4 = f(rv - _1_2*k2 +  dt*k3, q_m, E, B)    # t + 0.5*dt
+    k5 = f(rv + _3_16*k1 + _9_16*k4, q_m, E, B) # t + 0.75*dt
+    k6 = f(rv - _3_7 *k1 + _2_7 *k2 + _12_7*(k3 - k4) + _8_7*k5, q_m, E, B)  # t + dt
 
-    fV2 = V + (dt / 2.) * m1
-    gV2 = V + (dt / 2.) * m1
-    m2 = f(k, E, fV2, B)
-    k2 = gV2 # g(gV2)
+    return rv + dt/90.0 * (7.0*(k1 + k6) + 32.0*(k3 + k5) + 12.0*k4)
 
-    fV3 = V + (dt / 2.) * m2
-    gV3 = V + (dt / 2.) * m2
-    m3 = f(k, E, fV3, B)
-    k3 = gV3 # g(gV3)
+#%%
+def common_runge_kutta4(t, dt, vector, f):  # dvector = f(t, vector)
 
-    fV4 = V + dt * m3
-    gV4 = V + dt * m3
-    m4 = f(k, E, fV4, B)
-    k4 = gV4 # g(gV4)
+    dt2 = dt*0.5
+    k1 = f(t,       vector,        )  # t
+    k2 = f(t + dt2, vector + dt2*k1)  # t + 0.5*dt
+    k3 = f(t + dt2, vector + dt2*k2)  # t + 0.5*dt
+    k4 = f(t + dt , vector + dt *k3)  # t + dt
 
-    V = V + (dt / 6.) * (m1 + (2. * m2) + (2. * m3) + m4)
-    r = r + (dt / 6.) * (k1 + (2. * k2) + (2. * k3) + k4)
+    return vector + dt/6.0 * (k1 + 2.0 * (k2 + k3) + k4)
 
-    result = np.zeros((6,))
-    result[:3] = r
-    result[3:] = V
-    return result
+
+def common_runge_kutta5(t, dt, vector, f): # dvector = f(t, vector)
+
+    _1_2  = dt*0.5
+    _1_4  = dt*0.25
+    _3_4  = dt*0.75
+    _1_8  = dt*0.125
+    _1_16 = dt*0.0625
+    _1_7  = dt/7.0
+    _3_16 = 3.0*_1_16
+    _9_16 = 9.0*_1_16
+    _2_7  = 2.0 *_1_7
+    _3_7  = 3.0 *_1_7
+    _8_7  = 8.0 *_1_7
+    _12_7 = 12.0*_1_7
+
+    k1 = f(t,        vector           )             # t
+    k2 = f(t + _1_4, vector + _1_4*k1 )             # t + 0.25*dt
+    k3 = f(t + _1_4, vector + _1_8*(k1 + k2)      ) # t + 0.25*dt
+    k4 = f(t + _1_2, vector - _1_2*k2 +  dt*k3    ) # t + 0.5*dt
+    k5 = f(t + _3_4, vector + _3_16*k1 + _9_16*k4 ) # t + 0.75*dt
+    k6 = f(t +   dt, vector - _3_7 *k1 + _2_7 *k2 + _12_7*(k3 - k4) + _8_7*k5 )  # t + dt
+
+    return vector + dt/90.0 * (7.0*(k1 + k6) + 32.0*(k3 + k5) + 12.0*k4)
